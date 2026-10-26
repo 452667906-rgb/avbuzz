@@ -1,0 +1,20 @@
+
+name: FANZA Monitor Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Discord configuration
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "ERROR: Discord Webhook Secret is missing."
+            exit 1
+          fi
+          echo "SUCCESS: Discord Webhook Secret is configured."
