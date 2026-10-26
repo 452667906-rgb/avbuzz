@@ -1,5 +1,5 @@
 
-name: FANZA API Test
+name: FANZA Actress Test
 
 on:
   workflow_dispatch:
@@ -17,18 +17,34 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Test FANZA API
+      - name: Search actress
         run: |
           node --input-type=module <<'EOF'
-          import { fetchRanking } from './src/fanza-client.js';
+          import { searchActress, fetchByActress } from './src/fanza-client.js';
+
+          const name = '九野ひなの';
 
           try {
-            const result = await fetchRanking('sales', 3);
-            console.log('FANZA API request succeeded');
-            console.log('Number of returned works:', result.contents.length);
-            console.log('Total matching works:', result.totalCount);
+            const result = await searchActress(name);
+
+            console.log('Matching actresses:');
+            console.log(JSON.stringify(result.actresses, null, 2));
+
+            const actress = result.actresses.find(a => a.name === name);
+
+            if (!actress) {
+              console.error('Exact actress match not found');
+              process.exitCode = 1;
+            } else {
+              console.log('Actress ID:', actress.id);
+
+              const works = await fetchByActress(actress.id, 5);
+              console.log('Total works:', works.totalCount);
+              console.log('Returned works:', works.contents.length);
+              console.log('Work IDs:', works.contents.map(w => w.id));
+            }
           } catch (error) {
-            console.error('FANZA API request failed:', error.message);
+            console.error('Test failed:', error.message);
             process.exitCode = 1;
           }
           EOF
