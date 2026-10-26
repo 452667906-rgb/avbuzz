@@ -34,9 +34,18 @@ async function notify(actress, work) {
     color: 0xE91E63,
     fields: [
       {
-        name: 'FANZA 收录日期字段',
-        value: work.deliveryStartAt || '未知',
-        inline: true
+       {
+  name: 'FANZA 日期',
+  value: work.deliveryStartAt
+    ? new Intl.DateTimeFormat('zh-CN', {
+        timeZone: 'Asia/Tokyo',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }).format(new Date(work.deliveryStartAt))
+    : '未知',
+  inline: true
+}
       }
     ],
     ...(work.packageImage?.largeUrl
