@@ -86,7 +86,7 @@ export async function fetchByActress(actressId, limit = 20) {
       limit: ${limit},
       sort: DELIVERY_START_DATE,
       floor: AV,
-    filter: { actressIds: { ids: ["${actressId}"] } }
+    filter: { actressIds: { ids: [{ id: "${actressId}" }] } }
     ) {
       result {
         contents { ${CONTENT_FIELDS} }
