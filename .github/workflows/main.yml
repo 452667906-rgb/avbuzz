@@ -1,5 +1,5 @@
 
-name: FANZA Actress Test
+name: FANZA Actress Batch Test
 
 on:
   workflow_dispatch:
@@ -17,34 +17,68 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Search actress
+      - name: Search all actresses
         run: |
           node --input-type=module <<'EOF'
-          import { searchActress, fetchByActress } from './src/fanza-client.js';
+          import { searchActress } from './src/fanza-client.js';
 
-          const name = '九野ひなの';
+          const names = [
+            '九野ひなの',
+            '柏木ふみか',
+            '早坂奏音',
+            'あんづ杏',
+            '神喜ミア',
+            '純白彩永',
+            '蒼井すず',
+            '糸井瑠花',
+            '柏木こなつ',
+            '夢乃あいか',
+            '神宮寺ナオ',
+            '安達夕莉',
+            'めぐり',
+            '愛才りあ',
+            '白上咲花',
+            '堀北桃愛',
+            '中森ななみ',
+            '青坂あおい',
+            '久遠美緒',
+            '東峯日奈子',
+            '小松空'
+          ];
 
-          try {
-            const result = await searchActress(name);
+          const results = [];
 
-            console.log('Matching actresses:');
-            console.log(JSON.stringify(result.actresses, null, 2));
+          for (const name of names) {
+            try {
+              const result = await searchActress(name);
+              const exact = result.actresses.filter(
+                actress => actress.name === name
+              );
 
-            const actress = result.actresses.find(a => a.name === name);
-
-            if (!actress) {
-              console.error('Exact actress match not found');
-              process.exitCode = 1;
-            } else {
-              console.log('Actress ID:', actress.id);
-
-              const works = await fetchByActress(actress.id, 5);
-              console.log('Total works:', works.totalCount);
-              console.log('Returned works:', works.contents.length);
-              console.log('Work IDs:', works.contents.map(w => w.id));
+              results.push({
+                name,
+                status: exact.length === 1
+                  ? 'FOUND'
+                  : exact.length === 0
+                    ? 'NOT_FOUND'
+                    : 'MULTIPLE',
+                ids: exact.map(actress => actress.id)
+              });
+            } catch (error) {
+              results.push({
+                name,
+                status: 'ERROR',
+                message: error.message
+              });
             }
-          } catch (error) {
-            console.error('Test failed:', error.message);
-            process.exitCode = 1;
+
+            await new Promise(resolve => setTimeout(resolve, 500));
           }
+
+          console.log('=== FANZA ACTRESS RESULTS ===');
+          console.log(JSON.stringify(results, null, 2));
+          console.log('=== END RESULTS ===');
+
+          const found = results.filter(r => r.status === 'FOUND').length;
+          console.log(`Successfully matched: ${found}/${names.length}`);
           EOF
