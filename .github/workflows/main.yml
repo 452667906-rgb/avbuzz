@@ -1,84 +1,45 @@
 
-name: FANZA Actress Batch Test
+name: FANZA Daily Monitor
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 1 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fanza-daily-monitor
+  cancel-in-progress: false
 
 jobs:
-  test:
+  monitor:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Search all actresses
+      - name: Run FANZA monitor
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: node monitor.js
+
+      - name: Save monitoring records
+        if: success()
         run: |
-          node --input-type=module <<'EOF'
-          import { searchActress } from './src/fanza-client.js';
-
-          const names = [
-            '九野ひなの',
-            '柏木ふみか',
-            '早坂奏音',
-            'あんづ杏',
-            '神喜ミア',
-            '純白彩永',
-            '蒼井すず',
-            '糸井瑠花',
-            '柏木こなつ',
-            '夢乃あいか',
-            '神宮寺ナオ',
-            '安達夕莉',
-            'めぐり',
-            '愛才りあ',
-            '白上咲花',
-            '堀北桃愛',
-            '中森ななみ',
-            '青坂あおい',
-            '久遠美緒',
-            '東峯日奈子',
-            '小松空'
-          ];
-
-          const results = [];
-
-          for (const name of names) {
-            try {
-              const result = await searchActress(name);
-              const exact = result.actresses.filter(
-                actress => actress.name === name
-              );
-
-              results.push({
-                name,
-                status: exact.length === 1
-                  ? 'FOUND'
-                  : exact.length === 0
-                    ? 'NOT_FOUND'
-                    : 'MULTIPLE',
-                ids: exact.map(actress => actress.id)
-              });
-            } catch (error) {
-              results.push({
-                name,
-                status: 'ERROR',
-                message: error.message
-              });
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-
-          console.log('=== FANZA ACTRESS RESULTS ===');
-          console.log(JSON.stringify(results, null, 2));
-          console.log('=== END RESULTS ===');
-
-          const found = results.filter(r => r.status === 'FOUND').length;
-          console.log(`Successfully matched: ${found}/${names.length}`);
-          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add monitor-state.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Update FANZA monitoring records"
+            git push
+          fi
