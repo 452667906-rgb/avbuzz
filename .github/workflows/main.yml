@@ -1,5 +1,5 @@
 
-name: FANZA Monitor Test
+name: FANZA API Test
 
 on:
   workflow_dispatch:
@@ -9,17 +9,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Send Discord test message
-        env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: |
-          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
-            echo "Discord Webhook URL is missing"
-            exit 1
-          fi
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-          curl --fail-with-body --silent --show-error \
-            --retry 3 \
-            -H "Content-Type: application/json" \
-            -d '{"content":"FANZA Monitor 测试成功！GitHub Actions 已连接 Discord。"}' \
-            "$DISCORD_WEBHOOK_URL"
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Test FANZA API
+        run: |
+          node --input-type=module <<'EOF'
+          import { fetchRanking } from './src/fanza-client.js';
+
+          try {
+            const result = await fetchRanking('sales', 3);
+            console.log('FANZA API request succeeded');
+            console.log('Number of returned works:', result.contents.length);
+            console.log('Total matching works:', result.totalCount);
+          } catch (error) {
+            console.error('FANZA API request failed:', error.message);
+            process.exitCode = 1;
+          }
+          EOF
