@@ -9,12 +9,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check Discord configuration
+      - name: Send Discord test message
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
           if [ -z "$DISCORD_WEBHOOK_URL" ]; then
-            echo "ERROR: Discord Webhook Secret is missing."
+            echo "Discord Webhook URL is missing"
             exit 1
           fi
-          echo "SUCCESS: Discord Webhook Secret is configured."
+
+          curl --fail-with-body --silent --show-error \
+            --retry 3 \
+            -H "Content-Type: application/json" \
+            -d '{"content":"FANZA Monitor 测试成功！GitHub Actions 已连接 Discord。"}' \
+            "$DISCORD_WEBHOOK_URL"
