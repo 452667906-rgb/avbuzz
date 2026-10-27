@@ -1,0 +1,79 @@
+
+name: Actress ID Lookup
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lookup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Search FANZA actress IDs
+        run: |
+          node --input-type=module <<'EOF'
+          import { searchActress } from './src/fanza-client.js';
+
+          const names = [
+            '宝生みさと',
+            '希望みう',
+            '白川美玲',
+            '栞名結',
+            '涼乃愛',
+            '白間兎花',
+            '星空ねる',
+            '前田美波',
+            '奥井千晴',
+            '白石るな',
+            '三比菜々美',
+            '白石透羽',
+            '蜜このは',
+            '天宮花南',
+            '白森くるみ',
+            '南沢海香',
+            '三好佑香',
+            '小笠原菜乃',
+            '紫堂るい',
+            '浜辺やよい',
+            '藤かんな',
+            '新川空',
+            '小日向みゆう',
+            '東実果'
+          ];
+
+          const results = [];
+
+          for (const name of names) {
+            try {
+              const result = await searchActress(name);
+              const exact = result.actresses.filter(a => a.name === name);
+              results.push({
+                name,
+                status: exact.length ? 'FOUND' : 'NOT_FOUND',
+                ids: exact.map(a => a.id),
+                candidates: exact.length ? [] : result.actresses
+              });
+            } catch (error) {
+              results.push({
+                name,
+                status: 'ERROR',
+                error: error.message
+              });
+            }
+          }
+
+          console.log('=== FANZA ACTRESS RESULTS ===');
+          console.log(JSON.stringify(results, null, 2));
+          console.log('=== END RESULTS ===');
+          EOF
