@@ -71,9 +71,11 @@ for (const actress of actresses) {
     const oldIds = new Set(state[actress.id] || []);
     const currentIds = new Set(works.map(work => work.id));
 
-    const newWorks = firstRun
-      ? []
-      : works.filter(work => !oldIds.has(work.id));
+const isNewActress = !Object.hasOwn(state, actress.id);
+
+const newWorks = isNewActress
+  ? []
+  : works.filter(work => !oldIds.has(work.id));
 
     for (const work of newWorks.reverse()) {
       await notify(actress, work);
