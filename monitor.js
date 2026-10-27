@@ -34,7 +34,6 @@ async function notify(actress, work) {
     color: 0xE91E63,
     fields: [
       {
-       {
   name: 'FANZA 日期',
   value: work.deliveryStartAt
     ? new Intl.DateTimeFormat('zh-CN', {
