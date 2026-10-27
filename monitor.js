@@ -45,7 +45,6 @@ async function notify(actress, work) {
     : '未知',
   inline: true
 }
-      }
     ],
     ...(work.packageImage?.largeUrl
       ? { image: { url: work.packageImage.largeUrl } }
