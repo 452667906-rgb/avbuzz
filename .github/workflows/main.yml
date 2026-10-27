@@ -4,7 +4,7 @@ name: FANZA Daily Monitor
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 1 * * *'
+    - - cron: '17 2 * * *' # Runs at 02:17 UTC
 
 permissions:
   contents: write
