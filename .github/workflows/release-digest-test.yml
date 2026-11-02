@@ -1,0 +1,93 @@
+
+name: Release Digest Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Send test release digest
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          node --input-type=module <<'EOF'
+          import fs from 'node:fs/promises';
+          import { fetchByActress } from './src/fanza-client.js';
+
+          const webhook = process.env.DISCORD_WEBHOOK_URL;
+          if (!webhook) throw new Error('Missing Discord webhook');
+
+          const actresses = JSON.parse(
+            await fs.readFile('monitor-actresses.json', 'utf8')
+          );
+
+          const selected = [];
+          const seen = new Set();
+
+          // Find up to 3 real works from subscribed actresses.
+          for (const actress of actresses) {
+            if (selected.length >= 3) break;
+
+            const result = await fetchByActress(actress.id, 10);
+
+            for (const work of result.contents || []) {
+              if (seen.has(work.id)) continue;
+
+              seen.add(work.id);
+              selected.push({
+                actress: actress.name,
+                id: work.id,
+                title: work.title || work.id
+              });
+
+              break;
+            }
+          }
+
+          if (selected.length === 0) {
+            throw new Error('No works found for testing');
+          }
+
+          const lines = selected.map((work, index) => {
+            const url = `https://www.dmm.co.jp/digital/videoa/-/detail/=/cid=${encodeURIComponent(work.id)}/`;
+            const title = work.title.length > 90
+              ? work.title.slice(0, 87) + '...'
+              : work.title;
+
+            return `${index + 1}. **${work.actress}**\n[${title}](${url})\n作品 ID：${work.id}`;
+          });
+
+          const response = await fetch(webhook, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              embeds: [{
+                title: '【测试】FANZA 今日正式配信汇总',
+                description:
+                  '以下为真实 FANZA 作品，但并非今日正式配信，仅用于测试通知排版。\n\n' +
+                  lines.join('\n\n'),
+                color: 0x5865F2
+              }]
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`Discord HTTP ${response.status}`);
+          }
+
+          console.log(`Test digest sent: ${selected.length} works`);
+          EOF
