@@ -116,10 +116,14 @@ for (const actress of actresses) {
   try {
     const result = await fetchByActress(actress.id, 100);
     const works = result.contents || [];
-     for (const work of works) {
+    for (const work of works) {
       if (isCompilation(work)) {
+        const keyword = (work.title || '')
+          .normalize('NFKC')
+          .match(/総集編|傑作選|名場面集|厳選集|再編集/)?.[0];
+
         console.log(
-          `[Compilation detected] ${work.id}`
+          `[Compilation detected] ${work.id} | keyword: ${keyword}`
         );
       }
     }
