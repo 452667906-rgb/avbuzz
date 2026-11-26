@@ -41,6 +41,18 @@ const todayJST = new Intl.DateTimeFormat('en-CA', {
 let newCount = 0;
 let failed = 0;
 const releaseCandidates = new Map();
+function isCompilation(work) {
+  const title = (work.title || '').normalize('NFKC');
+
+  const compilationPattern =
+    /総集編|傑作選|名場面集|厳選集|再編集/;
+
+  const exceptionPattern =
+    /撮り下ろし|撮りおろし|撮り卸し|新規撮影|新撮映像/;
+
+  return compilationPattern.test(title) &&
+    !exceptionPattern.test(title);
+}
 
 function getReleaseDate(work) {
   if (!work.deliveryStartAt) return null;
@@ -104,6 +116,13 @@ for (const actress of actresses) {
   try {
     const result = await fetchByActress(actress.id, 100);
     const works = result.contents || [];
+     for (const work of works) {
+      if (isCompilation(work)) {
+        console.log(
+          `[Compilation detected] ${work.id}`
+        );
+      }
+    }
 
     const oldIds = new Set(state[actress.id] || []);
     const currentIds = new Set(works.map(work => work.id));
