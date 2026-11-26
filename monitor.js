@@ -45,7 +45,7 @@ function isCompilation(work) {
   const title = (work.title || '').normalize('NFKC');
 
   const compilationPattern =
-    /総集編|傑作選|名場面集|厳選集|再編集/;
+    /総集編|傑作選|名場面集|厳選集|再編集|100万|100本|BEST/i;
 
   const exceptionPattern =
     /撮り下ろし|撮りおろし|撮り卸し|新規撮影|新撮映像/;
@@ -120,7 +120,7 @@ for (const actress of actresses) {
       if (isCompilation(work)) {
         const keyword = (work.title || '')
           .normalize('NFKC')
-          .match(/総集編|傑作選|名場面集|厳選集|再編集/)?.[0];
+          .match(/総集編|傑作選|名場面集|厳選集|再編集|100万|100本|BEST/i)?.[0];
 
         console.log(
           `[Compilation detected] ${work.id} | keyword: ${keyword}`
